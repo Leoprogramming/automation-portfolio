@@ -62,7 +62,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const text = $input.item.json.output[0].content[0].text;\nconst parsed = JSON.parse(text);\nreturn { json: parsed };"
+        "jsCode": "const text = $input.item.json.output[0].content[0].text;\n\nlet parsed;\ntry {\n  parsed = JSON.parse(text);\n} catch (e) {\n  throw new Error(`OpenAI returned invalid JSON: ${text}`);\n}\n\nif (!parsed.urgency || !parsed.category || !parsed.summary) {\n  throw new Error(`OpenAI response missing required fields: ${text}`);\n}\n\nreturn { json: parsed };"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -313,9 +313,13 @@
   "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "oGQyuZ7e1q9F8X0G",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
-  "versionId": "7474d853-3be4-48a5-9fbe-2b1e77d002aa",
+  "versionId": "85440571-f6a1-4af1-b76a-5e80b16bfbf1",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "9eb35a9312eb8d754237f61dd5d4c62a912848da29fba42fc98f976a2bfd3950"
