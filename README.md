@@ -11,9 +11,12 @@ Junior AI Automation Engineer portfolio. Built while transitioning back into tec
 **Why it matters:** Rebuilt from a broken Zapier prototype. Demonstrates production thinking: structured outputs, credential management, error handling, audit logging.  
 [README](workflows/email-triage-v2-README.md) · [Workflow JSON](workflows/email-triage-v2.json)
 
-### 🔄 Project 2: End-to-end Business Automation (in progress)
+### ✅ Project 2: Job Posting Tracker
 
-TBD — invoice processing / lead qualification / job tracker
+**Stack:** n8n · Airtable · Arbeitnow API · JavaScript  
+**What it does:** Scrapes Berlin job postings daily at 9:30am, deduplicates against Airtable using slug matching, writes only new records with 19 fields pre-mapped for AI scoring.  
+**Why it matters:** Solves a real n8n gotcha — the naive Search+IF dedup breaks when the table is empty (0 items stops the flow). Fixed with a Merge architecture that works at any table size.  
+[README](workflows/job-tracker-README.md) · [Workflow JSON](workflows/job-tracker.json)
 
 ### 📅 Project 3: Custom MCP Server (planned Week 6-7)
 

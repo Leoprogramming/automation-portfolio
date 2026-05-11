@@ -37,3 +37,132 @@ _(fill in honestly — what didn't make sense)_
 - GitHub rotated SSH host keys at some point, old known_hosts entry caused warning
 - NordVPN occasionally interferes with SSH to github.com (note for future)
 - Docker Compose v2 is a separate apt package on Ubuntu, not bundled with docker.io
+
+# Extra learning notes:
+
+Project was very straighforward and the workflow surprised me with how easy and intuitive it was. Small hiccups were only setting up credentials, syncing accounts between emails, visualizing the whole architecture, although very simple, understand how n8n works and how to link workflows such as the error-handler etc
+
+## 2026-04-30 — Project 2 kickoff
+
+Airtable schema done (19 fields). Stopped before API token. Next: get PAT from airtable.com/create/tokens, add to n8n as credential, then build the flow.
+
+# For tomorrow 01-05-26
+
+Resuming Project 2: Job Posting Tracker.
+
+Session context:
+
+Airtable base "Job Tracker" is set up with 19 fields (full schema done)
+Data source: Arbeitnow API with client-side Berlin filter (location field contains "Berlin")
+Dedup key: slug field
+Description field is raw HTML — strip with: $input.item.json.description.replace(/<[^>]\*>/g, ' ').replace(/\s+/g, ' ').trim()
+Field names use spaces not underscores (e.g. description raw, scraped at)
+Never paste API keys in chat — credentials go to browser for testing, then n8n credential manager only
+Where we stopped: Airtable schema done. Haven't created the Personal Access Token yet.
+
+Next steps in order:
+
+Get PAT from airtable.com/create/tokens (scopes: data.records:read, data.records:write, schema.bases:read — restrict to Job Tracker base only)
+Add it to n8n as a credential
+Build the flow: Schedule Trigger → HTTP Request (Arbeitnow) → filter Berlin → strip HTML → Airtable dedup check → write new records
+Test end-to-end: new postings land in Airtable, re-run doesn't duplicate
+
+# For 05/05/26
+
+Resuming Project 2: Job Posting Tracker.
+
+What's built and working:
+
+Schedule Trigger: 0 30 9 \* \* \*, timezone Europe/Berlin
+HTTP Request: GET https://www.arbeitnow.com/api/job-board-api?search=AI+automation&location=berlin
+Code node (Run Once for All Items): filters Berlin jobs, strips HTML, joins arrays, converts Unix timestamp, adds scraped_at and source
+Airtable Search node: searches Job Postings table by {slug} = "{{ $json.slug }}", limit 1
+IF node: {{ $json.id }} is empty → True branch = new job, False branch = skip
+Not built yet:
+
+Airtable Create Record node (goes on True branch of IF node) — this is the next step
+Airtable Create node field mapping to build:
+
+Airtable field n8n expression
+title {{ $json.title }}
+slug {{ $json.slug }}
+company {{ $json.company }}
+location {{ $json.location }}
+url {{ $json.url }}
+description raw {{ $json.description_raw }}
+tags {{ $json.tags }}
+remote {{ $json.remote }}
+job types {{ $json.job_types }}
+created at {{ $json.created_at }}
+scraped at {{ $json.scraped_at }}
+source {{ $json.source }}
+status To Review (hardcoded)
+Leave blank: score, matching skills, missing skills, match reason, cover draft, notified.
+
+Known risk to test after Create node is built:
+When Airtable Search finds nothing, n8n may output 0 items instead of an empty item — meaning the IF node never triggers for new jobs and nothing gets created. If records don't appear in Airtable after running, this is why. Fix: restructure dedup logic in a Code node instead of Airtable Search + IF.
+
+After Create node: verification steps
+
+Execute full workflow → check records land in Airtable
+Run again → record count must stay the same (dedup confirmed)
+If duplicates appear → fix dedup logic
+Once clean: activate workflow (toggle top-right)
+Credentials in n8n:
+
+Airtable: "Airtable Personal Access Token account" (already saved)
+Slack webhook: not set up yet (Week 3 stretch goal)
+Stack context:
+
+n8n at localhost:5678 (Docker, always running)
+Airtable base: "Job Tracker", table: "Job Postings", 19 fields
+Data source: Arbeitnow API, client-side Berlin filter
+Dedup key: slug field
+Field names in Airtable use spaces not underscores
+
+## 2026-05-06 — Project 2 complete (Week 3)
+
+**Goal:** Get scraping + deduplication working reliably end-to-end.
+
+**Done:**
+
+- Built full n8n workflow: Schedule Trigger → HTTP Request (Arbeitnow) → Code (Berlin filter + HTML strip) → parallel [Airtable List + Berlin jobs] → Merge → Code (dedup) → Airtable Create
+- 26 real Berlin job postings landed in Airtable on first run, all fields populated
+- Second run: dedup code received 52 items (26 existing + 26 API), output 0 — count stayed at 26
+- Workflow published and running on schedule: 9:30am Berlin time daily
+
+**What I learned:**
+
+- n8n stops a flow when a node outputs 0 items — this killed the Search+IF dedup approach. Fix: run both streams in parallel, merge, dedup in a Code node.
+- Identifying Airtable records in a merged stream: check `item.json.id.startsWith('rec')`.
+- "No output data returned" from a dedup node is a success condition, not an error.
+- n8n cron uses 6 fields, not 5. `30 9 * * *` is wrong; `0 30 9 * * *` is correct.
+- Airtable "Automap" mode requires JSON field names to exactly match column names.
+
+**What confused me:**
+
+- Why Search returning 0 items kills everything downstream — n8n is item-driven, not event-driven. No items = flow stops.
+- The Merge architecture felt unintuitive at first, but it's the only way to have both streams in the same place for comparison.
+
+**Next (Week 4):**
+
+- Add OpenAI scoring node: score each new job 1-10 against my profile
+- Add Claude Haiku cover draft node for top-scored jobs
+
+# Two things to do before closing:
+
+1. Save your n8n workflow JSON — in n8n, top-right menu (the ...) → Download. Save it to workflows/ in the repo. That's your backup and portfolio artifact.
+
+2. Git commit what changed today:
+
+LEARNING.md (updated)
+The workflow JSON once you download it
+Tomorrow, open Claude Code in this folder and paste this:
+
+Resuming Project 2 Job Posting Tracker. Week 3 is done and published: 26 Berlin jobs in Airtable, dedup confirmed working (second run output 0 items). Today is Week 4 — adding AI scoring and cover draft generation to the workflow.
+
+Before you tell me anything, I want to design the Week 4 approach myself. Here's my thinking: [your attempt here]. Tell me what's wrong or missing.
+
+The bracket at the end is intentional — fill it in yourself before you paste it. Think about: where in the workflow do the new nodes go, what inputs does the scoring node need, what does it output, and how does the cover draft node connect to it.
+
+That's the ownership gap we talked about. Come in with a plan, even a rough one.
