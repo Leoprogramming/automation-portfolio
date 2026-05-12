@@ -164,8 +164,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -201,9 +201,9 @@
       "id": "d4e5f6a7-b8c9-0123-def0-123456789003",
       "name": "Generate Cover Draft",
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "99999999-9999-9999-9999-999999999999",
-          "name": "Anthropic API Key"
+        "anthropicApi": {
+          "id": "8bzyn8pdGf0HyQAK",
+          "name": "Anthropic account"
         }
       }
     },
