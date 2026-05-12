@@ -6,6 +6,9 @@ n8n-local/n8n_data/
 .env.local
 *.env
 
+# Private planning docs
+PLANNING-CONTEXT.md
+
 # OS / editor cruft
 .DS_Store
 .vscode/
