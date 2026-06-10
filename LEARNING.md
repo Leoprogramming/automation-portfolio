@@ -166,3 +166,22 @@ Before you tell me anything, I want to design the Week 4 approach myself. Here's
 The bracket at the end is intentional — fill it in yourself before you paste it. Think about: where in the workflow do the new nodes go, what inputs does the scoring node need, what does it output, and how does the cover draft node connect to it.
 
 That's the ownership gap we talked about. Come in with a plan, even a rough one.
+
+# Week 4 complete — 2026-06-10
+
+Both branches confirmed working on 2026-06-10:
+- High match (score 8): Werkstudent Web Dev at Teclead Ventures → cover draft generated ✅
+- Low match (scores 1-4): 14 jobs written without cover draft ✅
+
+Final Week 4 state:
+- Dual API search (n8n + AI automation engineer) merged before processing
+- Score threshold lowered from 7 to 6 to cast wider net
+- Claude Haiku called via HTTP Request node with anthropicApi credential (not native n8n node)
+- All files committed: job-tracker.json, job-tracker-README.md, PLANNING-CONTEXT.md
+
+Next session (Week 5):
+- Write the ROI story for Project 2 (measurable output: X jobs tracked, Y scored, Z cover drafts per week)
+- Polish the portfolio README
+- Decide whether to add a third search term or tweak scoring prompt
+- Repo: github.com/Leoprogramming/automation-portfolio
+- n8n: localhost:5678
