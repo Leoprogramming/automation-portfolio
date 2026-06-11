@@ -51,7 +51,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.post("/mcp", async (req: Request, res: Response) => {
-  await transport.handleRequest(req, res, req.body);
+  try {
+    await transport.handleRequest(req, res, req.body);
+  } catch (err) {
+    console.error("MCP request failed:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
 });
 
 async function main() {
