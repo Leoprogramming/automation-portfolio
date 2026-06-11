@@ -6,6 +6,9 @@ n8n-local/n8n_data/
 .env.local
 *.env
 
+# MCP client config — holds bearer token, .example is the committed template
+.mcp.json
+
 # Private planning docs
 PLANNING-CONTEXT.md
 
