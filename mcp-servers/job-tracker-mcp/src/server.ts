@@ -38,7 +38,7 @@ mcp.registerTool(
   "list_recent_jobs",
   {
     description:
-      "List job postings from the Airtable job tracker, newest first by Airtable's record creation order. Use this when the user asks about recent jobs, the latest applications, or wants to see what's been added to the tracker.",
+      "List job postings from the Airtable job tracker, newest first by Airtable's record creation order. Use this when the user asks about recent jobs, the latest applications, or wants to see what's been added to the tracker. Set include_description=false when scanning many jobs by metadata only (counts, filtering by status/location) to avoid context bloat.",
     inputSchema: {
       limit: z
         .number()
@@ -47,9 +47,15 @@ mcp.registerTool(
         .max(100)
         .default(10)
         .describe("Maximum number of jobs to return (1-100). Defaults to 10."),
+      include_description: z
+        .boolean()
+        .default(true)
+        .describe(
+          "Include the full job description text in each record. Defaults to true. Set false for fast metadata-only scans.",
+        ),
     },
   },
-  async ({ limit }) => {
+  async ({ limit, include_description }) => {
     const url = new URL(
       `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`,
     );
@@ -76,7 +82,14 @@ mcp.registerTool(
 
     const summary = data.records
       .map((r) => {
-        const fieldLines = Object.entries(r.fields)
+        const fields = include_description
+          ? r.fields
+          : Object.fromEntries(
+              Object.entries(r.fields).filter(
+                ([k]) => k !== "description raw",
+              ),
+            );
+        const fieldLines = Object.entries(fields)
           .map(([k, v]) => `    ${k}: ${JSON.stringify(v)}`)
           .join("\n");
         return `- id=${r.id} (created ${r.createdTime})\n${fieldLines}`;
