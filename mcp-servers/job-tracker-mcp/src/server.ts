@@ -26,10 +26,6 @@ mcp.tool(
   }),
 );
 
-const transport = new StreamableHTTPServerTransport({
-  sessionIdGenerator: undefined,
-});
-
 const app = express();
 app.use(express.json());
 
@@ -51,7 +47,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.post("/mcp", async (req: Request, res: Response) => {
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+  });
+  res.on("close", () => transport.close());
   try {
+    await mcp.connect(transport);
     await transport.handleRequest(req, res, req.body);
   } catch (err) {
     console.error("MCP request failed:", err);
@@ -62,7 +63,6 @@ app.post("/mcp", async (req: Request, res: Response) => {
 });
 
 async function main() {
-  await mcp.connect(transport);
   app.listen(PORT, () => {
     console.error(`MCP server listening on http://localhost:${PORT}/mcp`);
   });
