@@ -34,11 +34,22 @@ type AirtableRecord = {
   fields: Record<string, unknown>;
 };
 
+const LIST_FIELDS = new Set([
+  "title",
+  "company",
+  "score",
+  "status",
+  "slug",
+  "url",
+  "match reason",
+  "tags",
+]);
+
 mcp.registerTool(
   "list_recent_jobs",
   {
     description:
-      "List job postings from the Airtable job tracker, newest first by Airtable's record creation order. Use this when the user asks about recent jobs, the latest applications, or wants to see what's been added to the tracker. Set include_description=false when scanning many jobs by metadata only (counts, filtering by status/location) to avoid context bloat.",
+      "List a scannable index of job postings from the Airtable job tracker. Returns title, company, score, status, slug, url, tags, and match reason only — no full descriptions. Use this to browse, count, or filter jobs. To read a full job description, use get_job_by_slug.",
     inputSchema: {
       limit: z
         .number()
@@ -47,15 +58,9 @@ mcp.registerTool(
         .max(100)
         .default(10)
         .describe("Maximum number of jobs to return (1-100). Defaults to 10."),
-      include_description: z
-        .boolean()
-        .default(true)
-        .describe(
-          "Include the full job description text in each record. Defaults to true. Set false for fast metadata-only scans.",
-        ),
     },
   },
-  async ({ limit, include_description }) => {
+  async ({ limit }) => {
     const url = new URL(
       `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`,
     );
@@ -82,17 +87,11 @@ mcp.registerTool(
 
     const summary = data.records
       .map((r) => {
-        const fields = include_description
-          ? r.fields
-          : Object.fromEntries(
-              Object.entries(r.fields).filter(
-                ([k]) => k !== "description raw",
-              ),
-            );
-        const fieldLines = Object.entries(fields)
+        const fieldLines = Object.entries(r.fields)
+          .filter(([k]) => LIST_FIELDS.has(k))
           .map(([k, v]) => `    ${k}: ${JSON.stringify(v)}`)
           .join("\n");
-        return `- id=${r.id} (created ${r.createdTime})\n${fieldLines}`;
+        return `- slug=${r.fields["slug"] ?? r.id}\n${fieldLines}`;
       })
       .join("\n\n");
 
