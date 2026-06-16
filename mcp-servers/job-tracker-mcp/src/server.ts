@@ -106,6 +106,115 @@ mcp.registerTool(
   },
 );
 
+mcp.registerTool(
+  "update_job_status",
+  {
+    description:
+      "Update the status of a job in the Airtable tracker. Use this when the user says they've applied to a job, got an interview, or wants to change a job's status. Requires the job's slug (visible in list_recent_jobs output). Returns a before/after diff so the user can confirm the change.",
+    inputSchema: {
+      slug: z
+        .string()
+        .min(1)
+        .describe(
+          "The job's slug identifier, e.g. 'senior-crm-marketing-managerin-berlin-467202'. Get it from list_recent_jobs.",
+        ),
+      status: z
+        .enum(["To Review", "Applied", "Interview", "Rejected"])
+        .describe("The new status to set on the job."),
+    },
+  },
+  async ({ slug, status }) => {
+    // Find the record by slug
+    const searchUrl = new URL(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`,
+    );
+    searchUrl.searchParams.set("filterByFormula", `{slug}="${slug}"`);
+    searchUrl.searchParams.set("maxRecords", "1");
+
+    const searchResponse = await fetch(searchUrl, {
+      headers: { Authorization: `Bearer ${AIRTABLE_PAT}` },
+    });
+
+    if (!searchResponse.ok) {
+      const body = await searchResponse.text();
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Airtable lookup failed ${searchResponse.status}: ${body}`,
+          },
+        ],
+      };
+    }
+
+    const searchData = (await searchResponse.json()) as {
+      records: AirtableRecord[];
+    };
+
+    if (searchData.records.length === 0) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `No job found with slug "${slug}". Use list_recent_jobs to check available slugs.`,
+          },
+        ],
+      };
+    }
+
+    const record = searchData.records[0];
+    const currentStatus = record.fields["status"] as string | undefined;
+
+    if (currentStatus === status) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `No change: "${slug}" is already "${status}".`,
+          },
+        ],
+      };
+    }
+
+    // Update the record
+    const patchResponse = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}/${record.id}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_PAT}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ fields: { status } }),
+      },
+    );
+
+    if (!patchResponse.ok) {
+      const body = await patchResponse.text();
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Airtable PATCH failed ${patchResponse.status}: ${body}`,
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Updated "${slug}":\n  status: "${currentStatus ?? "unknown"}" → "${status}"`,
+        },
+      ],
+    };
+  },
+);
+
 const app = express();
 app.use(express.json());
 
