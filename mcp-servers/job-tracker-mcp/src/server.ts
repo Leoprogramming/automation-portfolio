@@ -45,6 +45,49 @@ const LIST_FIELDS = new Set([
   "tags",
 ]);
 
+const SlugSchema = z
+  .string()
+  .min(1)
+  .regex(
+    /^[a-z0-9-]+$/,
+    "Slug must contain only lowercase letters, digits, and hyphens.",
+  )
+  .describe(
+    "The job's slug identifier, e.g. 'senior-crm-marketing-managerin-berlin-467202'. Get it from list_recent_jobs.",
+  );
+
+type LookupResult = { record: AirtableRecord } | { error: string };
+
+// Caller must have already validated slug against SlugSchema; no further escaping is needed.
+async function findRecordBySlug(slug: string): Promise<LookupResult> {
+  const url = new URL(
+    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`,
+  );
+  url.searchParams.set("filterByFormula", `{slug}="${slug}"`);
+  url.searchParams.set("maxRecords", "1");
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${AIRTABLE_PAT}` },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    return {
+      error: `Airtable returned ${response.status} ${response.statusText}: ${body}`,
+    };
+  }
+
+  const data = (await response.json()) as { records: AirtableRecord[] };
+
+  if (data.records.length === 0) {
+    return {
+      error: `No job found with slug "${slug}". Use list_recent_jobs to check available slugs.`,
+    };
+  }
+
+  return { record: data.records[0] };
+}
+
 mcp.registerTool(
   "list_recent_jobs",
   {
@@ -107,64 +150,63 @@ mcp.registerTool(
 );
 
 mcp.registerTool(
+  "get_job_by_slug",
+  {
+    description:
+      "Fetch the full details of a single job posting by its slug, including the complete job description. Use this after list_recent_jobs to read the full posting before deciding to apply or update status.",
+    inputSchema: {
+      slug: SlugSchema,
+    },
+  },
+  async ({ slug }) => {
+    const lookup = await findRecordBySlug(slug);
+
+    if ("error" in lookup) {
+      return {
+        isError: true,
+        content: [{ type: "text", text: lookup.error }],
+      };
+    }
+
+    const { record } = lookup;
+    const fieldLines = Object.entries(record.fields)
+      .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`)
+      .join("\n");
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Job record for "${slug}":\n${fieldLines}`,
+        },
+      ],
+    };
+  },
+);
+
+mcp.registerTool(
   "update_job_status",
   {
     description:
       "Update the status of a job in the Airtable tracker. Use this when the user says they've applied to a job, got an interview, or wants to change a job's status. Requires the job's slug (visible in list_recent_jobs output). Returns a before/after diff so the user can confirm the change.",
     inputSchema: {
-      slug: z
-        .string()
-        .min(1)
-        .describe(
-          "The job's slug identifier, e.g. 'senior-crm-marketing-managerin-berlin-467202'. Get it from list_recent_jobs.",
-        ),
+      slug: SlugSchema,
       status: z
         .enum(["To Review", "Applied", "Interview", "Rejected"])
         .describe("The new status to set on the job."),
     },
   },
   async ({ slug, status }) => {
-    // Find the record by slug
-    const searchUrl = new URL(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`,
-    );
-    searchUrl.searchParams.set("filterByFormula", `{slug}="${slug}"`);
-    searchUrl.searchParams.set("maxRecords", "1");
+    const lookup = await findRecordBySlug(slug);
 
-    const searchResponse = await fetch(searchUrl, {
-      headers: { Authorization: `Bearer ${AIRTABLE_PAT}` },
-    });
-
-    if (!searchResponse.ok) {
-      const body = await searchResponse.text();
+    if ("error" in lookup) {
       return {
         isError: true,
-        content: [
-          {
-            type: "text",
-            text: `Airtable lookup failed ${searchResponse.status}: ${body}`,
-          },
-        ],
+        content: [{ type: "text", text: lookup.error }],
       };
     }
 
-    const searchData = (await searchResponse.json()) as {
-      records: AirtableRecord[];
-    };
-
-    if (searchData.records.length === 0) {
-      return {
-        isError: true,
-        content: [
-          {
-            type: "text",
-            text: `No job found with slug "${slug}". Use list_recent_jobs to check available slugs.`,
-          },
-        ],
-      };
-    }
-
-    const record = searchData.records[0];
+    const { record } = lookup;
     const currentStatus = record.fields["status"] as string | undefined;
 
     if (currentStatus === status) {
@@ -178,7 +220,6 @@ mcp.registerTool(
       };
     }
 
-    // Update the record
     const patchResponse = await fetch(
       `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}/${record.id}`,
       {
