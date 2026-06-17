@@ -12,6 +12,9 @@ n8n-local/n8n_data/
 # Private planning docs
 PLANNING-CONTEXT.md
 
+# Local agent config
+CLAUDE.md
+
 # OS / editor cruft
 .DS_Store
 .vscode/
