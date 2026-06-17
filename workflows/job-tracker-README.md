@@ -122,7 +122,7 @@ Why I fit: [match_reason from scoring step]
    - OpenAI API key
    - Anthropic API key
 3. Create an Airtable base with the schema above
-4. Update all Airtable nodes to point at your base and table IDs
+4. **Replace the placeholders in the imported workflow.** The exported JSON ships with `appREPLACE_ME` (base ID) and `tblREPLACE_ME` (table ID) so the file is portable. In every Airtable node, swap these for your real base and table IDs before the workflow will run.
 5. Publish the workflow
 
 ## Confirmed working

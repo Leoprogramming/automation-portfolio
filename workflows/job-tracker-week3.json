@@ -53,17 +53,17 @@
         "operation": "create",
         "base": {
           "__rl": true,
-          "value": "appZPPkDyeZRLZ4gY",
+          "value": "appREPLACE_ME",
           "mode": "list",
           "cachedResultName": "Job Tracker",
-          "cachedResultUrl": "https://airtable.com/appZPPkDyeZRLZ4gY"
+          "cachedResultUrl": "https://airtable.com/appREPLACE_ME"
         },
         "table": {
           "__rl": true,
-          "value": "tblrdXL6qaRZ1gP3c",
+          "value": "tblREPLACE_ME",
           "mode": "list",
           "cachedResultName": "Job Postings",
-          "cachedResultUrl": "https://airtable.com/appZPPkDyeZRLZ4gY/tblrdXL6qaRZ1gP3c"
+          "cachedResultUrl": "https://airtable.com/appREPLACE_ME/tblREPLACE_ME"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -339,17 +339,17 @@
         "operation": "search",
         "base": {
           "__rl": true,
-          "value": "appZPPkDyeZRLZ4gY",
+          "value": "appREPLACE_ME",
           "mode": "list",
           "cachedResultName": "Job Tracker",
-          "cachedResultUrl": "https://airtable.com/appZPPkDyeZRLZ4gY"
+          "cachedResultUrl": "https://airtable.com/appREPLACE_ME"
         },
         "table": {
           "__rl": true,
-          "value": "tblrdXL6qaRZ1gP3c",
+          "value": "tblREPLACE_ME",
           "mode": "list",
           "cachedResultName": "Job Postings",
-          "cachedResultUrl": "https://airtable.com/appZPPkDyeZRLZ4gY/tblrdXL6qaRZ1gP3c"
+          "cachedResultUrl": "https://airtable.com/appREPLACE_ME/tblREPLACE_ME"
         },
         "options": {}
       },
