@@ -42,3 +42,27 @@ AI Automation Engineer portfolio. I'm rebuilding into the field after a 3-year c
 - I have a separate Claude conversation that holds the long-term plan and strategy
 - You handle code execution, file editing, debugging
 - I'll bring strategic decisions to the other conversation
+
+## Public-artifact voice — hard rule
+
+Everything committed to this repo is public and must read as working
+developer output, not portfolio output. The repo must look like tools I
+built because I use them, not artifacts built to be evaluated.
+
+- **Never** reference recruiters, interviewers, hiring, "portfolio,"
+  "showcase," or what something "demonstrates / proves / highlights."
+- **No resume voice** anywhere in the repo: commit messages, code
+  comments, READMEs, LEARNING.md, file/folder/branch names, TODOs, PR titles.
+- Code comments explain the engineering ("surface Airtable failures
+  instead of swallowing them"), never the intent to impress ("added
+  error handling to show production thinking").
+- LEARNING.md reflects on the engineering, not the audience. "Per-request
+  transport fixed the 500" is fine. "This will look good to employers" is not.
+
+**The test before writing any line into the repo:** would a developer at
+a company write this exact line in a private internal repo nobody grades?
+If no, rewrite it.
+
+Strategy framing (job hunt, target roles, why this matters for applications)
+lives ONLY in gitignored planning docs (PLANNING-CONTEXT.md) and the
+planning chat. It never enters a tracked file.
