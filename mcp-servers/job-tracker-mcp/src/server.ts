@@ -293,8 +293,8 @@ app.post("/mcp", async (req: Request, res: Response) => {
 });
 
 async function main() {
-  app.listen(PORT, () => {
-    console.error(`MCP server listening on http://localhost:${PORT}/mcp`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.error(`MCP server listening on port ${PORT}`);
   });
 }
 
