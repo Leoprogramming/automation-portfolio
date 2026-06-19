@@ -1,10 +1,9 @@
 # n8n persistent data — local only
 n8n-local/n8n_data/
 
-# Environment files with secrets
-.env
-.env.local
-*.env
+# Environment files with secrets — keep .env.example as committed template
+.env*
+!.env.example
 
 # MCP client config — holds bearer token, .example is the committed template
 .mcp.json
