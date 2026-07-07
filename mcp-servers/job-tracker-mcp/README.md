@@ -1,8 +1,32 @@
 # Job Tracker MCP Server
 
-A custom [Model Context Protocol](https://modelcontextprotocol.io) server, written in TypeScript, that exposes Project 2's Airtable job tracker as tools Claude can call directly from a conversation.
+A custom [Model Context Protocol](https://modelcontextprotocol.io) server, written in TypeScript, that exposes Project 2's Airtable job tracker as tools any MCP client can call directly.
 
-Point an MCP client at this server and you can say things like *"show me my recent tracked jobs"* and *"mark the Teclead one as Applied"* — the client calls the right tool, with the right validated arguments, and writes back to the same Airtable base the n8n pipeline populates.
+## Architecture
+
+```
+MCP client (e.g. Claude Desktop)
+    │  HTTPS POST /mcp  +  Authorization: Bearer <token>
+    ▼
+Fly.io edge (Frankfurt) — TLS termination
+    ▼
+Node.js process (256MB, shared CPU, auto-stop when idle)
+    ├─ Express — bearer auth middleware (timing-safe compare)
+    └─ POST /mcp handler
+           │  per-request StreamableHTTP transport (stateless)
+           ▼
+       MCP SDK — tool dispatcher
+           ├─ list_recent_jobs  ─┐
+           ├─ get_job_by_slug   ─┼─→ Airtable REST API
+           └─ update_job_status ─┘       (state lives here)
+```
+
+**Transport:** StreamableHTTP, stateless — new transport per POST, no shared session state
+**Auth:** Bearer token, `crypto.timingSafeEqual` (timing-safe, no side-channel)
+**State:** Airtable — the server holds no state; restarts and scaling are safe
+**Validation:** Zod SlugSchema (`^[a-z0-9-]+$`) rejects unsafe input before any outbound call
+
+→ Tool details, stack, and setup below.
 
 ## Tools
 

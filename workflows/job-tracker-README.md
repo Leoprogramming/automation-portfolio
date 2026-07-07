@@ -2,6 +2,33 @@
 
 An n8n automation that scrapes Berlin job postings daily from multiple search terms, deduplicates against Airtable, scores each new job against a candidate profile using OpenAI, and generates a cover letter draft for strong matches using Claude Haiku.
 
+## Architecture
+
+```
+Schedule Trigger (9:30am Berlin, daily)
+→ HTTP Request (n8n) ─────┐
+→ HTTP Request (AI eng.) ─┴→ Merge API Results
+                               → Code (Berlin filter, cross-source dedup, HTML strip)
+                               → fork ──→ Merge (Input 1)
+                                      └──→ Search records (Airtable, Execute Once)
+                                                └──→ Merge (Input 2)
+                                                        → Code (dedup vs Airtable)
+                                                        → Score Job (OpenAI GPT-4o-mini)
+                                                        → Parse Score
+                                                        → Score >= 6?
+                                                            ├── true  → Generate Cover Draft (Claude Haiku)
+                                                            │            → Parse Cover Draft
+                                                            │            → Create record (high match)
+                                                            └── false → Create record (low match)
+```
+
+**Trigger:** Schedule, 9:30am Berlin daily
+**State:** Airtable — n8n is stateless, all job records live here
+**Dedup:** slug-based Code node after parallel merge of API results + existing Airtable records
+**Branch:** IF score ≥ 6 — above gets cover draft written to Airtable, below gets written without one
+
+→ Step-by-step breakdown and design decisions below.
+
 ## What it does
 
 1. **Schedule Trigger** — fires at 9:30am Berlin time every day (`0 30 9 * * *`)
@@ -20,26 +47,6 @@ An n8n automation that scrapes Berlin job postings daily from multiple search te
 14. **Parse Cover Draft** — extracts cover letter text from Anthropic response
 15. **Create record (high match)** — writes to Airtable with all fields including `cover_draft`
 16. **Create record (low match)** — writes to Airtable with all fields, `cover_draft` left empty
-
-## Architecture
-
-```
-Schedule Trigger
-→ HTTP Request (n8n) ─────┐
-→ HTTP Request (AI eng.) ─┴→ Merge API Results
-                               → Code (Berlin filter, cross-source dedup, HTML strip)
-                               → fork ──→ Merge (Input 1)
-                                      └──→ Search records (Airtable, Execute Once)
-                                                └──→ Merge (Input 2)
-                                                        → Code (dedup vs Airtable)
-                                                        → Score Job (OpenAI GPT-4o-mini)
-                                                        → Parse Score
-                                                        → Score >= 6?
-                                                            ├── true  → Generate Cover Draft (Claude Haiku)
-                                                            │            → Parse Cover Draft
-                                                            │            → Create record (high match)
-                                                            └── false → Create record (low match)
-```
 
 ## Why dual API search
 
