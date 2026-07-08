@@ -19,10 +19,15 @@ Junior AI Automation Engineer portfolio. Built while transitioning back into tec
 **Why it matters:** Solves a real n8n gotcha — the naive Search+IF dedup breaks when the table is empty (0 items stops the flow). Fixed with a Merge architecture that works at any table size. The dual-API search pattern (two parallel queries merged before dedup) is a genuine pattern for production-quality scrapers.  
 [README](workflows/job-tracker-README.md) · [Workflow JSON](workflows/job-tracker.json)
 
-### 📅 Project 3: Custom MCP Server (planned Week 6-7)
+### ✅ Project 3: Job Tracker MCP Server
 
-### 📅 Project 4: Next.js Dashboard (planned Week 8, optional)
+**Stack:** TypeScript · Node.js · MCP SDK · Express · Zod · Airtable REST API · Docker · Fly.io  
+**What it does:** Exposes the Project 2 Airtable job tracker as three MCP tools (`list_recent_jobs`, `get_job_by_slug`, `update_job_status`) any MCP client can call directly. Deployed to Fly.io Frankfurt over HTTPS with bearer auth.  
+**Why it matters:** Per-request transport (stateless by design — sharing a transport across requests causes 500s on the second call). Slug validation with a Zod regex before it touches the Airtable `filterByFormula` string. Timing-safe token comparison to avoid auth side-channels. Multi-stage Docker build to keep the image lean.  
+[README](mcp-servers/job-tracker-mcp/README.md) · [Source](mcp-servers/job-tracker-mcp/src/server.ts)
+
+### 📅 Project 4: Next.js Dashboard (optional)
 
 ## Stack
 
-n8n · OpenAI API · Anthropic API · JavaScript · Python (planned) · Docker
+n8n · OpenAI API · Anthropic API · TypeScript · JavaScript · Docker · Fly.io
