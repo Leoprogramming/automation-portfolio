@@ -121,7 +121,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const allItems = $input.all();\n\nconst existingSlugs = new Set(\n  allItems\n    .filter(item => typeof item.json.id === 'string' && item.json.id.startsWith('rec'))\n    .map(item => item.json.slug || item.json.fields?.slug)\n    .filter(Boolean)\n);\n\nconst newJobs = allItems.filter(item => {\n  const isAirtableRecord = typeof item.json.id === 'string' && item.json.id.startsWith('rec');\n  if (isAirtableRecord) return false;\n  return !existingSlugs.has(item.json.slug);\n});\n\nreturn newJobs.length > 0 ? newJobs : [];\n"
+        "jsCode": "const allItems = $input.all();\n\nconst existingSlugs = new Set(\n  allItems\n    .filter(item => typeof item.json.id === 'string' && item.json.id.startsWith('rec'))\n    .map(item => item.json.slug || item.json.fields?.slug)\n    .filter(Boolean)\n);\n\nconst newJobs = allItems.filter(item => {\n  const isAirtableRecord = typeof item.json.id === 'string' && item.json.id.startsWith('rec');\n  if (isAirtableRecord) return false;\n  return !existingSlugs.has(item.json.slug);\n});\n\nconst STUDENT_RE = /werkstudent|working student|praktikum|ausbildung|internship|hilfst\\u00e4tigkeit|student \\(college\\)/i;\nconst SENIORITY_RE = /\\b(senior|lead|principal|head of|manager|leiterin?|leitung)\\b/i;\n\nreturn newJobs.map(item => {\n  const title = item.json.title || '';\n  const jobTypes = item.json.job_types || '';\n\n  let structurally_ineligible = false;\n  let pre_filter_reason = '';\n\n  const studentMatch = STUDENT_RE.exec(title) || STUDENT_RE.exec(jobTypes);\n  if (studentMatch) {\n    structurally_ineligible = true;\n    pre_filter_reason = 'filtered: ' + studentMatch[0].toLowerCase();\n  } else {\n    const seniorityMatch = SENIORITY_RE.exec(title);\n    if (seniorityMatch) {\n      structurally_ineligible = true;\n      pre_filter_reason = 'filtered: ' + seniorityMatch[0].toLowerCase();\n    }\n  }\n\n  return {\n    json: {\n      ...item.json,\n      structurally_ineligible,\n      pre_filter_reason\n    }\n  };\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -143,7 +143,7 @@
         "responses": {
           "values": [
             {
-              "content": "=You are a job match scorer. Evaluate the posting below against the candidate profile and respond with JSON only â no markdown, no explanation.\n\nCANDIDATE PROFILE:\n- Skills: JavaScript, TypeScript, React, Next.js, Node.js, n8n workflow automation, LLM APIs (OpenAI/Anthropic), Docker, MCP servers\n- Level: Junior â treat all listed skills as current capabilities\n- Location: Berlin\n- Target: Junior AI Automation Engineer roles\n\nSCORING RULES:\n- Treat all skills listed above as current, proven capabilities\n- Penalize seniority mismatch: roles requiring a lead, manager, head, or senior title (5+ years, team lead responsibility) should score 4 or below regardless of skill overlap\n- Score 7-10 only for junior, working student, or entry-level roles with strong technical skill match\n\nJOB POSTING:\nTitle: {{ $json.title }}\nCompany: {{ $json.company }}\nTags: {{ $json.tags }}\nDescription: {{ $json.description_raw.slice(0, 1500) }}\n\nRespond with exactly this JSON structure:\n{\n  \"score\": <integer 1-10>,\n  \"matching_skills\": \"<comma-separated skills from the posting that match the candidate>\",\n  \"missing_skills\": \"<comma-separated skills the posting requires but the candidate lacks>\",\n  \"match_reason\": \"<one sentence explaining the score>\"\n}"
+              "content": "=You are a job match scorer. Evaluate the posting below against the candidate profile and respond with JSON only \u2014 no markdown, no explanation.\n\nCANDIDATE PROFILE:\n- Skills: JavaScript, TypeScript, React, Next.js, Node.js, n8n workflow automation, LLM APIs (OpenAI/Anthropic), Docker, MCP servers\n- Level: Junior \u2014 treat all listed skills as current capabilities\n- Location: Berlin\n- Target: Junior AI Automation Engineer roles\n- Availability: full-time employment only\n- Status: career transition back into tech after a 3-year break \u2014 not a student\n\nSTEP 1 \u2014 ELIGIBILITY (structural check only):\nSet eligible: false ONLY if one of these three structural conditions is explicitly present in the posting:\n  1. Employment type is Werkstudent, Praktikum, Working student, internship, or Ausbildung \u2014 candidate needs full-time employment\n  2. The job title contains Senior, Lead, Principal, Head, or Manager \u2014 OR the posting explicitly states a numeric years requirement (e.g. '5+ years', 'mindestens 4 Jahre')\n  3. The role requires a specific credential the candidate cannot have (e.g. medical license, law bar, PhD required)\n\nSet eligible: true in ALL other cases, including:\n- Domain or industry mismatch (marketing, finance, operations, etc.) \u2014 skill mismatch is what score is for\n- 'professional / experienced' or 'berufserfahren' job types \u2014 these are eligible: true by default, they do not imply a seniority bar\n- Roles that are a bad fit but are full-time and open to non-students\n\nIf eligible: false, eligibility_reason must quote the exact phrase from the posting that triggered the condition (e.g. 'Working student', 'Senior Engineer', '5+ years required'). Do not paraphrase \u2014 quote verbatim.\nIf eligible: true, eligibility_reason should be a short confirmation (e.g. 'Full-time role, no structural barrier').\n\nSTEP 2 \u2014 SCORING (only after eligibility):\n- Ineligible roles (eligible: false) must receive score: 0\n- Score 7-10 only for junior or entry-level roles with strong technical skill match\n- Score based on skill and domain match only \u2014 not on eligibility\n- Eligible roles with poor skill match should score 1-3, not be marked ineligible\n\nJOB POSTING:\nTitle: {{ $json.title }}\nCompany: {{ $json.company }}\nTags: {{ $json.tags }}\nJob type: {{ $json.job_types }}\nDescription: {{ $json.description_raw.slice(0, 1500) }}\n\nRespond with exactly this JSON structure:\n{\n  \"eligible\": <true or false>,\n  \"eligibility_reason\": \"<verbatim quote from posting if ineligible, or short confirmation if eligible>\",\n  \"score\": <integer 1-10, or 0 if ineligible>,\n  \"matching_skills\": \"<comma-separated skills from the posting that match the candidate>\",\n  \"missing_skills\": \"<comma-separated skills the posting requires but the candidate lacks>\",\n  \"match_reason\": \"<one sentence explaining the score>\"\n}"
             }
           ]
         },
@@ -168,7 +168,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const text = $input.item.json.output[0].content[0].text;\nconst job = $('Code in JavaScript1').item.json;\n\nlet scored;\ntry {\n  scored = JSON.parse(text);\n} catch (e) {\n  scored = { score: 0, matching_skills: '', missing_skills: '', match_reason: 'JSON parse error' };\n}\n\nreturn {\n  json: {\n    ...job,\n    score: typeof scored.score === 'number' ? scored.score : 0,\n    matching_skills: scored.matching_skills || '',\n    missing_skills: scored.missing_skills || '',\n    match_reason: scored.match_reason || '',\n    cover_draft: ''\n  }\n};\n"
+        "jsCode": "const text = $input.item.json.output[0].content[0].text;\nconst job = $('Code in JavaScript1').item.json;\n\nlet scored;\ntry {\n  scored = JSON.parse(text);\n} catch (e) {\n  scored = { eligible: false, eligibility_reason: 'JSON parse error', score: 0, matching_skills: '', missing_skills: '', match_reason: 'JSON parse error' };\n}\n\nreturn {\n  json: {\n    ...job,\n    eligible: scored.eligible === true,\n    eligibility_reason: scored.eligibility_reason || '',\n    score: typeof scored.score === 'number' ? scored.score : 0,\n    matching_skills: scored.matching_skills || '',\n    missing_skills: scored.missing_skills || '',\n    match_reason: scored.match_reason || '',\n    cover_draft: ''\n  }\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -190,13 +190,23 @@
           },
           "conditions": [
             {
-              "id": "c3e7a1b2-score-gte-7-condition",
+              "id": "c3e7a1b2-score-gte-6-condition",
               "leftValue": "={{ $json.score }}",
               "rightValue": 6,
               "operator": {
                 "type": "number",
                 "operation": "gte",
                 "name": "filter.operator.gte"
+              }
+            },
+            {
+              "id": "d4f8b2c1-eligible-true-condition",
+              "leftValue": "={{ $json.eligible }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal",
+                "name": "filter.operator.equal"
               }
             }
           ],
@@ -241,7 +251,7 @@
             },
             {
               "name": "messages",
-              "value": "={{ [{ role: 'user', content: 'Write a personalized 2-paragraph cover letter opening (under 150 words) for this job application.\\n\\nPosition: ' + $json.title + ' at ' + $json.company + '\\nJob tags: ' + $json.tags + '\\n\\nAbout me: Junior AI Automation Engineer based in Berlin. 2 years full-stack dev experience (JS/TS/React/Node), now focused on AI workflow automation with n8n, LLM APIs (OpenAI/Anthropic), Docker, and MCP servers. Building production-grade automation projects after returning to tech.\\n\\nWhy I fit this role: ' + $json.match_reason + '\\n\\nOutput only the cover letter text. No greeting line, no sign-off.' }] }}"
+              "value": "={{ [{ role: 'user', content: 'Write a 2-paragraph cover letter opening (under 150 words) for this job application.\\n\\nPOSITION: ' + $json.title + ' at ' + $json.company + '\\nJOB TAGS: ' + $json.tags + '\\nWHY I FIT: ' + $json.match_reason + '\\n\\nABOUT ME (use only these facts \u2014 do not invent anything not stated here):\\n- Based in Berlin, available for full-time employment immediately\\n- Not a student \u2014 career transition back into tech after a 3-year break\\n- 2 years full-stack dev experience 2020\u20132022: JavaScript, TypeScript, React, Next.js, Node.js\\n- Now building AI workflow automation: n8n, LLM APIs (OpenAI, Anthropic), Docker, MCP servers\\n- Bootcamp trained (Le Wagon, IronHack), project management background\\n\\nCONSTRAINTS:\\n- Do not invent personal circumstances, study situations, availability constraints, or background details not listed above\\n- Do not mention balancing studies, university, or student life\\n- Do not add a greeting line\\n- End with a blank line, then 'Leonardo Costa' on one line, then 'leo.costa.programming@gmail.com' on the next\\n- Output only the cover letter text' }] }}"
             }
           ]
         },
@@ -313,7 +323,9 @@
             "matching skills": "={{ $json.matching_skills }}",
             "missing skills": "={{ $json.missing_skills }}",
             "match reason": "={{ $json.match_reason }}",
-            "cover draft": "={{ $json.cover_draft }}"
+            "cover draft": "={{ $json.cover_draft }}",
+            "eligible": "={{ $json.eligible === true ? true : false }}",
+            "eligibility reason": "={{ $json.eligibility_reason }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -603,7 +615,9 @@
             "matching skills": "={{ $json.matching_skills }}",
             "missing skills": "={{ $json.missing_skills }}",
             "match reason": "={{ $json.match_reason }}",
-            "cover draft": ""
+            "cover draft": "",
+            "eligible": "={{ $json.eligible === true ? true : false }}",
+            "eligibility reason": "={{ $json.eligibility_reason }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -854,6 +868,54 @@
           "name": "Airtable Job Tracker"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a1b2c3d4-prefilter-condition",
+              "leftValue": "={{ $json.structurally_ineligible }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal",
+                "name": "filter.operator.equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1580,
+        624
+      ],
+      "id": "e5f6a7b8-prefilter-if-node",
+      "name": "Pre-filter ineligible?"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const job = $input.item.json;\nreturn {\n  json: {\n    ...job,\n    eligible: false,\n    eligibility_reason: job.pre_filter_reason || 'filtered: structural ineligibility',\n    score: 0,\n    matching_skills: '',\n    missing_skills: '',\n    match_reason: 'Structurally ineligible \u2014 skipped scoring.',\n    cover_draft: ''\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1580,
+        800
+      ],
+      "id": "c9d0e1f2-shape-ineligible-node",
+      "name": "Shape ineligible record"
     }
   ],
   "pinData": {},
@@ -949,7 +1011,7 @@
       "main": [
         [
           {
-            "node": "Score Job",
+            "node": "Pre-filter ineligible?",
             "type": "main",
             "index": 0
           }
@@ -1012,6 +1074,35 @@
         [
           {
             "node": "Score >= 6?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-filter ineligible?": {
+      "main": [
+        [
+          {
+            "node": "Shape ineligible record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Score Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape ineligible record": {
+      "main": [
+        [
+          {
+            "node": "Create record (low match)",
             "type": "main",
             "index": 0
           }
