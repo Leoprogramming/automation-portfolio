@@ -26,19 +26,17 @@ Node.js process (256MB, shared CPU, auto-stop when idle)
 **State:** Airtable — the server holds no state; restarts and scaling are safe
 **Validation:** Zod SlugSchema (`^[a-z0-9-]+$`) rejects unsafe input before any outbound call
 
-→ Tool details, stack, and setup below.
-
 ## Tools
 
 The server exposes three tools to any MCP client.
 
 | Tool | Direction | What it does |
 |------|-----------|--------------|
-| `list_recent_jobs(limit?)` | read | Returns a scannable index of recent postings — title, company, score, status, slug, url, tags, match reason. **No description field** — kept deliberately slim. |
-| `get_job_by_slug(slug)` | read | Returns the **full** record for one job, including the complete description. Use after `list_recent_jobs` when you want to read a posting in detail. |
+| `list_recent_jobs(limit?)` | read | Returns a scannable index of recent postings — title, company, score, status, slug, url, tags, match reason. No description field — kept deliberately slim. |
+| `get_job_by_slug(slug)` | read | Returns the full record for one job, including the complete description. Use after `list_recent_jobs` when you want to read a posting in detail. |
 | `update_job_status(slug, status)` | **write** | Updates a job's status (`To Review` / `Applied` / `Interview` / `Rejected`). Returns a before/after diff. Status is a strict Zod enum — no free-form text. |
 
-## Architecture
+## Implementation notes
 
 - **Transport:** [StreamableHTTP](https://modelcontextprotocol.io/docs/concepts/transports), stateless mode (`sessionIdGenerator: undefined`). Each POST to `/mcp` creates its own transport instance and closes it on response, so there is no shared session state across requests.
 - **Auth:** Bearer token in the `Authorization` header, compared with `crypto.timingSafeEqual` to avoid timing side-channels. Missing or wrong token → `401`.
@@ -151,4 +149,3 @@ mcp-servers/job-tracker-mcp/
 └── README.md
 ```
 
-The full implementation is a single file by design — at this size, splitting into modules would obscure more than it clarifies.

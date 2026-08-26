@@ -1,32 +1,27 @@
-# AI Automation Portfolio — Leonardo Costa
+# AI Automation Projects — Leonardo Costa
 
-Junior AI Automation Engineer portfolio. Built while transitioning back into tech, targeting Berlin market, late June / early July 2026.
+AI automation and LLM integration projects. n8n, OpenAI, Anthropic, MCP, TypeScript.
 
 ## Projects
 
-### ✅ Project 1: Email Triage System v2
+### Project 1: Email Triage System v2
 
 **Stack:** n8n · OpenAI API · Gmail API · Google Sheets  
-**What it does:** Monitors Gmail, classifies emails with GPT-4o-mini (urgency, category, summary), logs to Sheets, auto-labels high-urgency emails.  
-**Why it matters:** Rebuilt from a broken Zapier prototype. Demonstrates production thinking: structured outputs, credential management, error handling, audit logging.  
+**What it does:** Monitors Gmail, classifies emails with GPT-4o-mini (urgency, category, summary), logs to Sheets, auto-labels high-urgency emails. JSON-schema-constrained outputs, dedicated error-handling workflow, credentials in the n8n credential manager.  
 [README](workflows/email-triage-v2-README.md) · [Workflow JSON](workflows/email-triage-v2.json)
 
-### ✅ Project 2: Job Posting Tracker
+### Project 2: Job Posting Tracker
 
 **Stack:** n8n · OpenAI GPT-4o-mini · Anthropic Claude Haiku · Airtable · Arbeitnow API · JavaScript  
-**What it does:** Scrapes Berlin job postings daily at 9:30am via two parallel API searches, deduplicates against Airtable, scores each new job 1-10 against a candidate profile using GPT-4o-mini, and generates a cover letter draft for jobs scoring ≥ 6 using Claude Haiku. Live since late May 2026.  
-**Real numbers (June 2026):** 134 jobs tracked · 34 scored by GPT · 1 cover draft generated (score 8 at Teclead Ventures)  
-**Why it matters:** Solves a real n8n gotcha — the naive Search+IF dedup breaks when the table is empty (0 items stops the flow). Fixed with a Merge architecture that works at any table size. The dual-API search pattern (two parallel queries merged before dedup) is a genuine pattern for production-quality scrapers.  
+**What it does:** Scrapes Berlin job postings daily at 9:30am via two parallel API searches, deduplicates against Airtable, scores each new job 1-10 against a candidate profile using GPT-4o-mini, and generates a cover letter draft for strong matches using Claude Haiku. Live since May 2026.  
+**Numbers (August 2026):** 657+ jobs tracked and counting · cover drafts generated for strong matches  
 [README](workflows/job-tracker-README.md) · [Workflow JSON](workflows/job-tracker.json)
 
-### ✅ Project 3: Job Tracker MCP Server
+### Project 3: Job Tracker MCP Server
 
 **Stack:** TypeScript · Node.js · MCP SDK · Express · Zod · Airtable REST API · Docker · Fly.io  
 **What it does:** Exposes the Project 2 Airtable job tracker as three MCP tools (`list_recent_jobs`, `get_job_by_slug`, `update_job_status`) any MCP client can call directly. Deployed to Fly.io Frankfurt over HTTPS with bearer auth.  
-**Why it matters:** Per-request transport (stateless by design — sharing a transport across requests causes 500s on the second call). Slug validation with a Zod regex before it touches the Airtable `filterByFormula` string. Timing-safe token comparison to avoid auth side-channels. Multi-stage Docker build to keep the image lean.  
 [README](mcp-servers/job-tracker-mcp/README.md) · [Source](mcp-servers/job-tracker-mcp/src/server.ts)
-
-### 📅 Project 4: Next.js Dashboard (optional)
 
 ## Stack
 
