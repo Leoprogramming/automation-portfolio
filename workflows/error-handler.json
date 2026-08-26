@@ -6,12 +6,12 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1KWusyJG6Ye9_Q8-HNyTpIQy-6_O184kRQ4N-AEcNEOI/edit?gid=1897838387#gid=1897838387",
+          "value": "https://docs.google.com/spreadsheets/d/REPLACE_ME_SHEETS_ID/edit",
           "mode": "url"
         },
         "sheetName": {
           "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1KWusyJG6Ye9_Q8-HNyTpIQy-6_O184kRQ4N-AEcNEOI/edit?gid=1897838387#gid=1897838387",
+          "value": "https://docs.google.com/spreadsheets/d/REPLACE_ME_SHEETS_ID/edit",
           "mode": "url"
         },
         "columns": {
