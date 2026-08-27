@@ -131,3 +131,7 @@ Why I fit: [match_reason from scoring step]
 3. Create an Airtable base with the schema above
 4. **Replace the placeholders in the imported workflow.** The exported JSON ships with `appREPLACE_ME` (base ID) and `tblREPLACE_ME` (table ID) so the file is portable. In every Airtable node, swap these for your real base and table IDs before the workflow will run.
 5. Publish the workflow
+
+## Updating the tracked workflow JSON
+
+When re-exporting from n8n, run `./workflows/scrub-job-tracker.sh /path/to/exported.json` to strip real Airtable IDs back to `appREPLACE_ME` / `tblREPLACE_ME` before committing. The script writes to `workflows/job-tracker.json` and exits nonzero if any 14-char ID slips through.
