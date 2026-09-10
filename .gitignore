@@ -10,6 +10,8 @@ n8n-local/n8n_data/
 
 # Private planning docs
 PLANNING-CONTEXT.md
+CAMPAIGN-TIMELINE-*.md
+PROJECT-RULES-*.md
 
 # Local agent config
 CLAUDE.md
