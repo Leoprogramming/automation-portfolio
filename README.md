@@ -1,5 +1,7 @@
 # AI Automation Projects — Leonardo Costa
 
+[![CI](https://github.com/Leoprogramming/automation-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/Leoprogramming/automation-portfolio/actions/workflows/ci.yml)
+
 AI automation and LLM integration projects. n8n, OpenAI, Anthropic, MCP, TypeScript.
 
 ## Projects
