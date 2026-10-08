@@ -10,6 +10,7 @@ n8n-local/n8n_data/
 
 # Private planning docs
 PLANNING-CONTEXT.md
+RAG-SPEC.md
 CAMPAIGN-TIMELINE-*.md
 PROJECT-RULES-*.md
 
